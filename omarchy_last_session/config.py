@@ -45,6 +45,11 @@ Terminal = tuple[str, str, Optional[str]]
 # [general]: key -> (default, the comment written above it in the file).
 # A list in the file replaces the default list.
 SETTINGS: dict[str, tuple[SettingValue, str]] = {
+    "geometry_only": (
+        0,
+        "1 restores dwindle geometry without browser preference edits; 0 keeps upstream behavior.",
+    ),
+    "initial_delay": (90, "Seconds before monitoring starts after restore. Set 0 for immediate protection."),
     "exclude": (
         [],
         "Window classes never saved or restored. The shell's and the compositor's own\n"
@@ -302,6 +307,8 @@ SAVE_INTERVAL: float
 SWEEP_TIMEOUT: float
 TITLE_SETTLE: float
 MAX_PREEXISTING_WINDOWS: float
+GEOMETRY_ONLY: bool
+INITIAL_DELAY: float
 
 
 def apply(settings: Settings) -> None:
@@ -310,8 +317,10 @@ def apply(settings: Settings) -> None:
     global KITTY_SESSION_FILE, KITTY_SESSION_GLOB, EXCLUDE_CLASSES, TUI_PROGRAMS, SHELLS
     global TERMINALS, CHROMIUM_BROWSERS, RESTORE_FLAGS, SESSION_KEEPING_CLASSES, SINGLE_INSTANCE_CLASSES
     global SETTLE_DELAY, SAVE_INTERVAL, SWEEP_TIMEOUT, TITLE_SETTLE, MAX_PREEXISTING_WINDOWS
-    global RESTORED_INSTANCE_FILE
+    global RESTORED_INSTANCE_FILE, GEOMETRY_ONLY, INITIAL_DELAY
     # A relative path is taken from home, so every command resolves it alike whatever its cwd.
+    GEOMETRY_ONLY = bool(settings["geometry_only"])
+    INITIAL_DELAY = settings["initial_delay"]
     state_dir = os.path.expanduser(settings["state_dir"])
     STATE_DIR = os.path.join(HOME, state_dir) if state_dir else DEFAULT_STATE_DIR
     SESSION_FILE = os.path.join(STATE_DIR, "session.json")

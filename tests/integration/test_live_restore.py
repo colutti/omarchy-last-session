@@ -611,6 +611,34 @@ class LiveRestore(unittest.TestCase):
         self.project = os.path.join(self.work, "project")
         os.makedirs(self.project)
 
+    def test_geometry_mode_restores_unequal_tiles_and_floating_windows_after_reboot(self):
+        c = self.comp.boot(MONITORS)
+        c.dispatch("hl.dsp.focus({ workspace = 2 })")
+        for title in ("alpha", "beta", "gamma"):
+            c.open_window(f"foot --app-id=geometry-tile --title={title} sh -c 'sleep 180'")
+        first = next(w for w in c.clients() if w["title"] == "alpha")
+        c.dispatch(f"hl.dsp.focus({{ window = {address(first)} }})")
+        c.dispatch("hl.dsp.layout('splitratio 0.7 exact')")
+        c.dispatch("hl.dsp.focus({ workspace = 1 })")
+        floating = c.open_window("foot --app-id=geometry-float --title=delta sh -c 'sleep 180'")
+        target = address(floating)
+        c.dispatch(f"hl.dsp.window.float({{ action = 'on', window = {target} }})")
+        c.dispatch(f"hl.dsp.window.resize({{ x = 600, y = 350, window = {target} }})")
+        c.dispatch(f"hl.dsp.window.move({{ x = 200, y = 150, window = {target} }})")
+        state = os.path.join(self.work, "state")
+        saved = c.run_script("save", state, settings="geometry_only = 1\n")
+        self.assertEqual(saved.returncode, 0, saved.stderr)
+        before = {
+            w["title"]: (w["at"], w["size"], w["floating"], w["workspace"]["name"]) for w in c.clients()
+        }
+        c.shutdown()
+        c.boot(MONITORS)
+        restored = c.run_script("restore", state, settings="geometry_only = 1\n")
+        self.assertEqual(restored.returncode, 0, restored.stdout + restored.stderr)
+        self.assertEqual(restored.stderr, "", restored.stdout + restored.stderr + c.requests())
+        after = {w["title"]: (w["at"], w["size"], w["floating"], w["workspace"]["name"]) for w in c.clients()}
+        self.assertEqual(after, before, c.requests())
+
     def build_session(self):
         """What a user had open across two monitors: a terminal in a project,
         a maximized window, tiled, floating and pinned windows, a group, and a

@@ -1,5 +1,25 @@
 # omarchy-last-session
 
+## Layout restoration fork
+
+This fork adds an opt-in window geometry mode, a scheduler fix, a previous-snapshot copy, and configurable monitoring startup. Upstream project and MIT attribution are preserved.
+
+```ini
+[general]
+geometry_only = 1
+initial_delay = 0
+```
+
+In this mode, browser profile Preferences are never edited. Applications still use their own persistence when relaunched. Ordinary dwindle tiles are reconstructed from the saved rectangles and remain tiled, including unequal and nested splits. Restoration is exact when monitor geometry, scale, gaps and application size constraints are unchanged. Other layouts and grouped or fullscreen multi-tile workspaces retain upstream placement and log a geometry fallback.
+
+Remove equivalent fixed application autostarts and placement rules when using the plugin as the sole application restorer; retain desktop infrastructure such as idle, input and tray services. Wire the generated power menu rows as below. In geometry mode these save and freeze the snapshot for the current compositor instance without signalling applications. The next compositor instance automatically resumes monitoring. Avoid running the `shutdown` command by itself: it intentionally freezes monitoring until the session ends.
+
+`session.json.previous` preserves the immediately preceding snapshot with private permissions. It is a recovery aid, not a historical backup. No snapshots or personal configuration belong in this repository.
+
+Validation: unit regressions cover the periodic-deadline close race, browser preference isolation, shutdown freeze and partition inference. A live compositor reboot test covers three same-class unequal tiles and a floating window on two monitors with different scales. Tests do not reboot the host.
+
+---
+
 Session restore for [Omarchy](https://omarchy.org): saves the windows you have open and brings them back after a reboot, shutdown, logout or crash. An Omarchy shell plugin for Hyprland 0.55+.
 
 Every window is restored on the workspace and monitor it was on. Floating windows keep their position and size. Pinned, fullscreen and grouped windows come back in that state, and a group keeps its tab order and the tab it showed. Terminals reopen in their last working directory, browsers keep their tabs, and web apps opened from a Chromium browser come back as their own windows. Saving is automatic, so there is no save step before you power off.

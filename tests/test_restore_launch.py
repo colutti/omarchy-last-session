@@ -98,6 +98,12 @@ class BrowserRelaunch(RestoreHarness):
         emitted = self.run_restore([already, already])
         self.assertFalse(any(e.startswith("mark_clean_exit") for e in emitted))
 
+    def test_geometry_mode_does_not_modify_browser_preferences(self):
+        self.write_session([saved_window("brave-browser")])
+        with mock.patch.object(config, "GEOMETRY_ONLY", True, create=True):
+            emitted = self.run_restore([{}])
+        self.assertFalse(any(e.startswith("mark_clean_exit") for e in emitted))
+
     def test_other_apps_are_not_marked(self):
         self.write_session([saved_window("code"), saved_window("foot")])
         self.assertFalse(any(e.startswith("mark_clean_exit") for e in self.run_restore([{}])))

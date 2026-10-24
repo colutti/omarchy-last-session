@@ -40,6 +40,22 @@ class Shutdown(StateDirCase):
         self.run_shutdown([client("code")])
         self.assertEqual(mode_of(self.copy), 0o600)
 
+    def test_geometry_shutdown_freezes_snapshot_without_signalling_apps(self):
+        with (
+            mock.patch.dict(os.environ, {"HYPRLAND_INSTANCE_SIGNATURE": "test-instance"}),
+            mock.patch.object(config, "GEOMETRY_ONLY", True),
+            mock.patch.object(session, "quit_session_keeping_apps") as quit_apps,
+        ):
+            self.run_shutdown([client("code")])
+            self.assertTrue(session.is_shutdown_frozen())
+            quit_apps.assert_not_called()
+            with mock.patch.object(
+                hypr, "get_layout", side_effect=AssertionError("must not inspect teardown")
+            ):
+                self.assertEqual(cli.save_if_due(session.SaveScheduler()), config.SAVE_INTERVAL)
+            with mock.patch.dict(os.environ, {"HYPRLAND_INSTANCE_SIGNATURE": "next-instance"}):
+                self.assertFalse(session.is_shutdown_frozen())
+
     def test_plain_save_does_not_touch_the_copy(self):
         """Only a clean exit updates it; the 60-second daemon must not."""
         self.save_with([client("code")])

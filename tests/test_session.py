@@ -237,6 +237,14 @@ class PrivateState(StateDirCase):
         self.save_with([client("code")])
         self.assertEqual(mode_of(self.state), 0o700)
 
+    def test_previous_snapshot_survives_an_empty_save(self):
+        session.write_session([{"class": "example-app"}])
+        session.write_session([])
+        with open(self.session + ".previous") as f:
+            previous = json.load(f)
+        self.assertEqual(previous["windows"], [{"class": "example-app"}])
+        self.assertEqual(mode_of(self.session + ".previous"), 0o600)
+
     def test_the_snapshot_is_readable_by_this_user_only(self):
         self.with_umask(0o000)
         self.save_with([client("code")])
@@ -490,6 +498,17 @@ class SaveSchedule(unittest.TestCase):
         self.assertFalse(scheduler.is_due({"a": {}}, 165))
         self.assertEqual(scheduler.seconds_until_recheck(165), 4)
         self.assertTrue(scheduler.is_due({"a": {}}, 169))
+
+    def test_window_returning_after_periodic_deadline_does_not_spin(self):
+        scheduler = session.SaveScheduler()
+        scheduler.is_due({"a": {}}, 0)
+        scheduler.mark_saved(0)
+        self.assertFalse(scheduler.is_due({}, 55))
+        self.assertFalse(scheduler.is_due({"a": {}}, 61))
+        self.assertEqual(scheduler.seconds_until_recheck(61), 10)
+        self.assertFalse(scheduler.is_due({"a": {}}, 65))
+        self.assertEqual(scheduler.seconds_until_recheck(65), 6)
+        self.assertTrue(scheduler.is_due({"a": {}}, 71))
 
     def test_the_sleep_never_goes_negative(self):
         self.observe(self.A, 0)

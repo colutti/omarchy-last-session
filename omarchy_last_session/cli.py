@@ -57,6 +57,10 @@ def run_shutdown() -> None:
         session.copy_session_to(config.LAST_SHUTDOWN_FILE)
     except OSError as e:
         warn(f"could not keep a copy: {e}")
+    if config.GEOMETRY_ONLY:
+        session.freeze_shutdown_snapshot()
+        print("snapshot frozen for shutdown; application state is managed by the apps")
+        return
     stubborn = session.quit_session_keeping_apps()
     if stubborn:
         print(f"{len(stubborn)} app(s) did not exit in time")
@@ -72,7 +76,7 @@ def run_restore(options: list[str]) -> int | None:
 
 
 def run_daemon() -> None:
-    time.sleep(config.DAEMON_INITIAL_DELAY)
+    time.sleep(config.INITIAL_DELAY)
     scheduler = session.SaveScheduler()
     events = hypr.open_event_stream()
     while hypr.wait_for_placement_change(events, save_if_due(scheduler)):
@@ -158,6 +162,8 @@ def tilde(path: str) -> str:
 def save_if_due(scheduler: session.SaveScheduler) -> float:
     """Returns how long the daemon may sleep before looking again."""
     try:
+        if session.is_shutdown_frozen():
+            return config.SAVE_INTERVAL
         if config.reload_if_changed():
             log(f"reloaded {config.CONFIG_FILE}")
         now = time.monotonic()

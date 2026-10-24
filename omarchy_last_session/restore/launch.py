@@ -39,7 +39,8 @@ def launch_saved_windows(windows: list[SavedWindow], origins: hypr.Origins, runn
             starting.remove(program)
             wait_for_program(program)
         if win["class"] in config.CHROMIUM_BROWSERS and win["class"] not in running:
-            chromium.mark_clean_exit(win["class"], win["cmd"])
+            if not config.GEOMETRY_ONLY:
+                chromium.mark_clean_exit(win["class"], win["cmd"])
             starting.add(program)
         rules = build_exec_rules(win, origins)
         hypr.dispatch(f"hl.dsp.exec_cmd({hypr.quote_lua_long(win['cmd'])}, {rules})")

@@ -7,7 +7,7 @@ import contextlib
 import os
 
 from omarchy_last_session import config, hypr, notification, session, warn
-from omarchy_last_session.restore import launch, layout, sweep
+from omarchy_last_session.restore import launch, layout, sweep, tiled
 from omarchy_last_session.restore.pairing import Pairing
 
 TOAST_SUMMARY = "Restoring last session\u2026"
@@ -81,6 +81,8 @@ def restore_windows(windows: list[session.SavedWindow], already_open: dict[str, 
     layout.build_groups(placed)
     layout.name_workspaces(windows)
     layout.place_workspaces_on_monitors(windows)
+    if config.GEOMETRY_ONLY:
+        tiled.restore_tiled_geometry(placed)
     layout.show_saved_workspaces(windows)
 
 

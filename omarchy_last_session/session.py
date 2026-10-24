@@ -79,7 +79,7 @@ class SaveScheduler:
         only_vanished = set(layout) < set(self.saved)
         if layout != self.saved and not only_vanished:
             return True
-        if now - self.still_since < config.SETTLE_DELAY:
+        if self.still_since > self.saved_at and now - self.still_since < config.SETTLE_DELAY:
             return False
         return layout != self.saved or now - self.saved_at >= config.SAVE_INTERVAL
 
@@ -92,7 +92,12 @@ class SaveScheduler:
             # The periodic deadline cannot override the disappearance grace period.
             # Returning zero after it expires would repeatedly query the compositor.
             return max(0.0, self.still_since + config.SETTLE_DELAY - now)
-        return max(0.0, self.saved_at + config.SAVE_INTERVAL - now)
+        deadline = self.saved_at + config.SAVE_INTERVAL
+        if self.current == self.saved and self.still_since > self.saved_at:
+            # A vanished window can return to precisely the saved layout after
+            # the periodic deadline. is_due still waits for quiet in that case.
+            deadline = max(deadline, self.still_since + config.SETTLE_DELAY)
+        return max(0.0, deadline - now)
 
 
 def snapshot_windows() -> list[SavedWindow]:
@@ -189,6 +194,12 @@ def find_group_seats(clients: list[hypr.Client]) -> dict[str, GroupSeat]:
 
 
 def write_session(windows: list[SavedWindow]) -> None:
+    try:
+        copy_session_to(config.SESSION_FILE + ".previous")
+    except FileNotFoundError:
+        pass
+    except OSError as e:
+        warn(f"could not keep previous snapshot: {e}")
     write_private(config.SESSION_FILE, json.dumps({"saved_at": time.time(), "windows": windows}, indent=2))
 
 
@@ -245,6 +256,26 @@ def open_private(path: str) -> TextIO:
     if os.fstat(f.fileno()).st_mode & 0o077:
         os.fchmod(f.fileno(), 0o600)
     return f
+
+
+def freeze_shutdown_snapshot() -> None:
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "").strip()
+    if signature:
+        write_private(os.path.join(config.STATE_DIR, "shutdown-instance"), signature)
+
+
+def is_shutdown_frozen() -> bool:
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "").strip()
+    if not signature:
+        return False
+    try:
+        with open_private(os.path.join(config.STATE_DIR, "shutdown-instance")) as f:
+            return f.read().strip() == signature
+    except FileNotFoundError:
+        return False
+    except (OSError, UnicodeDecodeError) as e:
+        warn(f"could not read shutdown marker: {e}")
+        return False
 
 
 def quit_session_keeping_apps(timeout: float = config.GRACEFUL_QUIT_TIMEOUT) -> set[int]:
