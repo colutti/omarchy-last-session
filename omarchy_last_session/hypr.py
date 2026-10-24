@@ -266,6 +266,12 @@ def get_monitor_layout() -> dict[int, MonitorPlace]:
         return {}
 
 
+def get_workspace_layout(selector: str) -> str:
+    """The per-workspace layout, which may override general:layout."""
+    code = f"local w = hl.get_workspace({quote_lua(selector)}) return w and w.tiled_layout or ''"
+    return _request("repl", code).strip()
+
+
 def get_monitor_origins() -> Origins:
     origins: Origins = {}
     for monitor_id, place in get_monitor_layout().items():

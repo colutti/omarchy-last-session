@@ -67,7 +67,7 @@ def infer_tree(seats: list[Pairing]) -> Tree | None:
 
 def build_commands(tree: Tree) -> str:
     tiles = leaves(tree)
-    commands = []
+    commands: list[str] = []
 
     def dispatch(body: str) -> None:
         commands.append(f"hl.dispatch({body})")
@@ -130,8 +130,7 @@ def restore_tiled_geometry(placed: list[Pairing]) -> None:
             warn(f"workspace {selector}: unpaired tiles present, preserving live layout")
             continue
         # Per-workspace layout can differ from general:layout.
-        code = f"local w = hl.get_workspace({hypr.quote_lua(selector)}) return w and w.tiled_layout or ''"
-        if hypr._request("repl", code).strip() != "dwindle":
+        if hypr.get_workspace_layout(selector) != "dwindle":
             warn(f"workspace {selector}: exact geometry currently supports dwindle only")
             continue
         tree = infer_tree(seats)
