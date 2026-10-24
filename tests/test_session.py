@@ -480,6 +480,17 @@ class SaveSchedule(unittest.TestCase):
         self.assertEqual(self.scheduler.seconds_until_recheck(5), 10)
         self.assertEqual(self.scheduler.seconds_until_recheck(12), 3)
 
+    def test_close_near_periodic_deadline_waits_without_spinning(self):
+        scheduler = session.SaveScheduler()
+        scheduler.is_due({"a": {}, "b": {}}, 100)
+        scheduler.mark_saved(100)
+        self.assertFalse(scheduler.is_due({"a": {}}, 159))
+        self.assertFalse(scheduler.is_due({"a": {}}, 160))
+        self.assertEqual(scheduler.seconds_until_recheck(160), 9)
+        self.assertFalse(scheduler.is_due({"a": {}}, 165))
+        self.assertEqual(scheduler.seconds_until_recheck(165), 4)
+        self.assertTrue(scheduler.is_due({"a": {}}, 169))
+
     def test_the_sleep_never_goes_negative(self):
         self.observe(self.A, 0)
         self.assertEqual(self.scheduler.seconds_until_recheck(999), 0)

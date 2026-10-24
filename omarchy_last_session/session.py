@@ -88,10 +88,11 @@ class SaveScheduler:
 
     def seconds_until_recheck(self, now: float) -> float:
         """How long the daemon may sleep if nothing happens."""
-        deadlines = [self.saved_at + config.SAVE_INTERVAL]
-        if self.current != self.saved:
-            deadlines.append(self.still_since + config.SETTLE_DELAY)
-        return max(0.0, min(deadlines) - now)
+        if self.saved is not None and self.current is not None and set(self.current) < set(self.saved):
+            # The periodic deadline cannot override the disappearance grace period.
+            # Returning zero after it expires would repeatedly query the compositor.
+            return max(0.0, self.still_since + config.SETTLE_DELAY - now)
+        return max(0.0, self.saved_at + config.SAVE_INTERVAL - now)
 
 
 def snapshot_windows() -> list[SavedWindow]:
