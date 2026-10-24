@@ -29,6 +29,9 @@ INSTALLED_APP_CLASS = re.compile(r"^(?:chrome|chromium|brave|msedge)-(?P<app_id>
 def build_relaunch_command(client: hypr.Client, session_file: str | None = None) -> str | None:
     """The shell command that recreates this window's process, or None."""
     pid, cls = client["pid"], client.get("class", "")
+    if cls in config.LAUNCHERS:
+        # An explicit user command is trusted; no sandbox-provided argument is reused.
+        return config.LAUNCHERS[cls]
     # A sandboxed process writes its own command line and picks its own class:
     # replayed on the host, either would run code outside the sandbox.
     if not proc.is_host_process(pid):

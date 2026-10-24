@@ -8,9 +8,14 @@ This fork adds an opt-in window geometry mode, a scheduler fix, a previous-snaps
 [general]
 geometry_only = 1
 initial_delay = 0
+
+[launchers]
+steam = steam
 ```
 
 In this mode, browser profile Preferences are never edited. Applications still use their own persistence when relaunched. Ordinary dwindle tiles are reconstructed from the saved rectangles and remain tiled, including unequal and nested splits. Restoration is exact when monitor geometry, scale, gaps and application size constraints are unchanged. Other layouts and grouped or fullscreen multi-tile workspaces retain upstream placement and log a geometry fallback.
+
+The optional `[launchers]` table maps a window class to an explicit trusted command. It does not autostart that app: the command is used only when its window was saved. This supports applications such as Steam whose window belongs to a helper inside an otherwise unrecognized sandbox. No arguments from that sandbox are replayed.
 
 Remove equivalent fixed application autostarts and placement rules when using the plugin as the sole application restorer; retain desktop infrastructure such as idle, input and tray services. Wire the generated power menu rows as below. In geometry mode these save and freeze the snapshot for the current compositor instance without signalling applications. The next compositor instance automatically resumes monitoring. Avoid running the `shutdown` command by itself: it intentionally freezes monitoring until the session ends.
 

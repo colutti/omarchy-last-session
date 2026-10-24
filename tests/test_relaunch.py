@@ -459,3 +459,14 @@ class InstalledWebApps(unittest.TestCase):
             self.relaunch([self.BRAVE, "--app=https://web.whatsapp.com/"]),
             f"{self.BRAVE} --app-id=hnpfjngllnobngcgfapefoaidbinmjnm",
         )
+
+
+class ExplicitLaunchers(unittest.TestCase):
+    def test_user_configured_launcher_does_not_replay_sandbox_arguments(self):
+        with (
+            mock.patch.object(config, "LAUNCHERS", {"steam": "steam"}, create=True),
+            mock.patch.object(proc, "is_host_process", return_value=False),
+            mock.patch.object(proc, "read_cmdline", return_value=["sh", "-c", "untrusted"]),
+        ):
+            result = relaunch.build_relaunch_command({"pid": 123, "class": "steam"})
+        self.assertEqual(result, "steam")

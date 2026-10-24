@@ -8,7 +8,11 @@ local bootstrap = io.open(omarchy .. "/bootstrap.lua")
 if bootstrap then
   bootstrap:close()
   dofile(omarchy .. "/bootstrap.lua")
-  require("default.hypr.omarchy")
+  -- Load only the window/layout defaults. The full desktop module runs
+  -- autostart hooks, provisioning and environment imports against the host.
+  require("default.hypr.helpers")
+  require("default.hypr.looknfeel")
+  require("default.hypr.windows")
 end
 
 hl.monitor({ output = "MON-A", mode = "preferred", position = "0x0", scale = 1 })

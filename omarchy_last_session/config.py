@@ -143,6 +143,12 @@ def parse_profile_dir(text: str) -> str | None:
 # Sections holding a table: name -> (default rows, comment, parser of one row's value).
 # A section in the file replaces the whole table.
 TABLES: dict[str, tuple[dict[str, Any], str, Callable[[str], object]]] = {
+    "launchers": (
+        {},
+        "Explicit trusted launch commands by window class, including unknown sandboxes.\n"
+        "Example: steam = steam. These commands never inherit the process arguments.",
+        parse_profile_dir,
+    ),
     "terminals": (
         {
             "kitty": ("kitty", "-d", None),
@@ -299,6 +305,7 @@ TUI_PROGRAMS: frozenset[str]
 SHELLS: frozenset[str]
 TERMINALS: dict[str, Terminal]
 CHROMIUM_BROWSERS: dict[str, str]
+LAUNCHERS: dict[str, str]
 RESTORE_FLAGS: dict[str, str]
 SESSION_KEEPING_CLASSES: frozenset[str]
 SINGLE_INSTANCE_CLASSES: frozenset[str]
@@ -317,7 +324,7 @@ def apply(settings: Settings) -> None:
     global KITTY_SESSION_FILE, KITTY_SESSION_GLOB, EXCLUDE_CLASSES, TUI_PROGRAMS, SHELLS
     global TERMINALS, CHROMIUM_BROWSERS, RESTORE_FLAGS, SESSION_KEEPING_CLASSES, SINGLE_INSTANCE_CLASSES
     global SETTLE_DELAY, SAVE_INTERVAL, SWEEP_TIMEOUT, TITLE_SETTLE, MAX_PREEXISTING_WINDOWS
-    global RESTORED_INSTANCE_FILE, GEOMETRY_ONLY, INITIAL_DELAY
+    global RESTORED_INSTANCE_FILE, GEOMETRY_ONLY, INITIAL_DELAY, LAUNCHERS
     # A relative path is taken from home, so every command resolves it alike whatever its cwd.
     GEOMETRY_ONLY = bool(settings["geometry_only"])
     INITIAL_DELAY = settings["initial_delay"]
@@ -336,6 +343,7 @@ def apply(settings: Settings) -> None:
     SHELLS = frozenset(settings["shells"])
     TERMINALS = dict(settings["terminals"])
     CHROMIUM_BROWSERS = dict(settings["chromium-browsers"])
+    LAUNCHERS = dict(settings["launchers"])
     RESTORE_FLAGS = dict.fromkeys(CHROMIUM_BROWSERS, RESTORE_FLAG)
     # Sent SIGTERM at shutdown so they write their windows down.
     SESSION_KEEPING_CLASSES = frozenset(CHROMIUM_BROWSERS) | frozenset(settings["session_keeping"])
