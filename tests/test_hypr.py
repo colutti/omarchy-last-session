@@ -247,3 +247,13 @@ class ManagedClients(unittest.TestCase):
             mock.patch.object(hypr, "query", return_value=clients),
         ):
             self.assertEqual(list(hypr.get_managed_clients()), ["0x1"])
+
+
+class StartupWindows(unittest.TestCase):
+    def test_discord_updater_is_not_a_restorable_application_window(self):
+        clients = [
+            {"address": "0x1", "class": "discord", "mapped": True, "title": "Discord Updater"},
+            {"address": "0x2", "class": "discord", "mapped": True, "title": "Discord"},
+        ]
+        with mock.patch.object(hypr, "query", return_value=clients):
+            self.assertEqual(list(hypr.get_managed_clients()), ["0x2"])

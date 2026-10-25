@@ -125,3 +125,16 @@ class OutOfPlace(unittest.TestCase):
             saved_window("x", floating=True, at=(2250, 485), monitor_name="DP-9"), monitor_at=[1920, 0]
         )
         self.assertEqual(placement.get_saved_offset(win, {"DP-9": (3840, 0)}), (330, 485))
+
+
+class FloatingSizeDrift(unittest.TestCase):
+    def test_smaller_window_at_the_saved_position_still_needs_correction(self):
+        saved = saved_window("steam", ws=4, floating=True, at=(250, 80), size=(2020, 1200))
+        landed = {
+            "workspace": {"id": 4},
+            "floating": True,
+            "at": [250, 80],
+            "size": [1200, 700],
+            "monitor": 0,
+        }
+        self.assertTrue(placement.is_out_of_place(saved, landed, {0: (0, 0)}))

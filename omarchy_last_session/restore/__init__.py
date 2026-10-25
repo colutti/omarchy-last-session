@@ -7,7 +7,7 @@ import contextlib
 import os
 
 from omarchy_last_session import config, hypr, notification, session, warn
-from omarchy_last_session.restore import launch, layout, sweep, tiled
+from omarchy_last_session.restore import launch, layout, placement, sweep, tiled
 from omarchy_last_session.restore.pairing import Pairing
 
 TOAST_SUMMARY = "Restoring last session\u2026"
@@ -81,6 +81,14 @@ def restore_windows(windows: list[session.SavedWindow], already_open: dict[str, 
     layout.build_groups(placed)
     layout.name_workspaces(windows)
     layout.place_workspaces_on_monitors(windows)
+    # Moving a workspace between differently scaled outputs may renegotiate
+    # floating client sizes. Validate against the final output, not the launch one.
+    final_origins = hypr.get_monitor_origins()
+    live = hypr.get_managed_clients()
+    for entry, address in placed:
+        client = live.get(address)
+        if entry["floating"] and client and placement.is_out_of_place(entry, client, final_origins):
+            placement.place_window(entry, address, final_origins, floating=bool(client.get("floating")))
     if config.GEOMETRY_ONLY:
         tiled.restore_tiled_geometry(placed)
     layout.show_saved_workspaces(windows)

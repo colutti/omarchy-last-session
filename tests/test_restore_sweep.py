@@ -20,6 +20,29 @@ class RestoreSweep(RestoreHarness):
         self.assertTrue(moves)
         self.assertIn("'4'", moves[0])
 
+    def test_floating_size_is_rechecked_after_monitor_placement(self):
+        self.write_session([saved_window("steam", ws=4, floating=True, size=(2020, 1200))])
+        landed = {
+            "0xaa": {
+                "class": "steam",
+                "workspace": {"id": 4},
+                "at": [0, 0],
+                "size": [2020, 1200],
+                "floating": True,
+                "monitor": 0,
+            }
+        }
+        # Moving between monitors with different scale can renegotiate client size.
+        from omarchy_last_session.restore import layout
+
+        with mock.patch.object(
+            layout,
+            "place_workspaces_on_monitors",
+            side_effect=lambda _: landed["0xaa"].update(size=[1200, 700]),
+        ):
+            emitted = self.run_restore([{}, landed], sweep_timeout=5)
+        self.assertTrue(any("window.resize" in e and "2020" in e and "1200" in e for e in emitted))
+
     def test_correctly_placed_window_is_left_alone(self):
         self.write_session([saved_window("brave-browser", ws=4)])
         landed = {"0xaa": {"class": "brave-browser", "workspace": {"id": 4}, "at": [0, 0], "floating": False}}

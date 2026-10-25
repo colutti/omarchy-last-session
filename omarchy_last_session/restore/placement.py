@@ -37,7 +37,10 @@ def is_out_of_place(win: SavedWindow, client: hypr.Client, origins: hypr.Origins
     # A window rule may float a window that was saved tiled, as Omarchy's does
     # to Steam; left floating it cannot rejoin its group.
     floating_off = bool(client.get("floating")) != bool(win["floating"])
-    geometry_off = win["floating"] and get_live_offset(client, origins) != get_saved_offset(win, origins)
+    geometry_off = win["floating"] and (
+        get_live_offset(client, origins) != get_saved_offset(win, origins)
+        or client.get("size", win["size"]) != win["size"]
+    )
     return misplaced or floating_off or geometry_off or bool(win.get("fullscreen", 0)) or win["pinned"]
 
 

@@ -179,7 +179,10 @@ def get_managed_clients() -> dict[str, Client]:
     return {
         c["address"]: c
         for c in query("clients")
-        if c.get("mapped") and c.get("class") and c["class"] not in config.EXCLUDE_CLASSES
+        if c.get("mapped")
+        and c.get("class")
+        and c["class"] not in config.EXCLUDE_CLASSES
+        and not (c["class"].lower() == "discord" and c.get("title") == "Discord Updater")
     }
 
 
