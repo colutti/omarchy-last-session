@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from omarchy_last_session import chromium, config, hypr, log
+from omarchy_last_session import chromium, config, hypr, log, relaunch
 from omarchy_last_session.restore import pairing, placement
 from omarchy_last_session.session import SavedWindow
 
@@ -43,7 +43,8 @@ def launch_saved_windows(windows: list[SavedWindow], origins: hypr.Origins, runn
                 chromium.mark_clean_exit(win["class"], win["cmd"])
             starting.add(program)
         rules = build_exec_rules(win, origins)
-        hypr.dispatch(f"hl.dsp.exec_cmd({hypr.quote_lua_long(win['cmd'])}, {rules})")
+        cmd = relaunch.normalize_web_app_command(win["cmd"], win["class"])
+        hypr.dispatch(f"hl.dsp.exec_cmd({hypr.quote_lua_long(cmd)}, {rules})")
         log(f"launched {win['class']} onto workspace {hypr.format_workspace_selector(win['workspace'])}")
         time.sleep(config.SPAWN_STAGGER)
 

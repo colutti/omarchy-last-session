@@ -72,6 +72,19 @@ class RestoreSpawning(RestoreHarness):
         self.assertIn("[[/usr/share/code/code]]", emitted)
         self.assertIn("'3 silent'", emitted)
 
+    def test_old_web_app_snapshot_does_not_restore_browser_tabs(self):
+        self.write_session(
+            [
+                saved_window(
+                    "chrome-app.example.com__-Default",
+                    cmd="/usr/bin/chromium --restore-last-session --app=https://app.example.com/",
+                )
+            ]
+        )
+        emitted = self.run_restore([{}])[0]
+        self.assertIn("--app=https://app.example.com/", emitted)
+        self.assertNotIn("--restore-last-session", emitted)
+
     def test_command_containing_long_bracket_is_escaped(self):
         self.write_session([saved_window("odd", cmd="sh -c ]]")])
         emitted = self.run_restore([{}])[0]

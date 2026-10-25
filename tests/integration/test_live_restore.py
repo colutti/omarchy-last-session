@@ -162,7 +162,7 @@ class Compositor:
         env = {
             k: v
             for k, v in os.environ.items()
-            if k not in ("WAYLAND_DISPLAY", "DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE")
+            if k not in ("WAYLAND_DISPLAY", "DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE", "CHROME_DESKTOP")
         }
         env.update(
             HOME=self.home,

@@ -76,7 +76,22 @@ def fit_app_flags(argv: list[str], cls: str) -> list[str]:
     if own is None and cls not in config.CHROMIUM_BROWSERS:
         return argv
     kept = [arg for arg in argv if not arg.startswith(APP_FLAG_PREFIXES)]
-    return kept + [own] if own else kept
+    if own:
+        # Every Chromium window shares the main process argv. Its restore flag
+        # belongs to browser windows, not to a standalone app invocation.
+        kept = [arg for arg in kept if arg != config.RESTORE_FLAG]
+        return kept + [own]
+    return kept
+
+
+def normalize_web_app_command(cmd: str, cls: str) -> str:
+    """Clean old snapshots too, without reinterpreting other apps' shell commands."""
+    if cls in config.LAUNCHERS or not (WEB_APP_CLASS.match(cls) or INSTALLED_APP_CLASS.match(cls)):
+        return cmd
+    try:
+        return shlex.join(fit_app_flags(shlex.split(cmd), cls))
+    except ValueError:
+        return cmd
 
 
 def find_own_app_flag(cls: str, argv: list[str]) -> str | None:

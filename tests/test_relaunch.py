@@ -407,6 +407,10 @@ class ChromiumWebApps(unittest.TestCase):
         cmd = self.relaunch("google-chrome", [self.CHROME, "--app=https://web.whatsapp.com/"])
         self.assertEqual(cmd, f"{self.CHROME} --restore-last-session")
 
+    def test_web_app_does_not_inherit_browser_session_restore_switch(self):
+        cmd = self.relaunch(self.WHATSAPP, [self.CHROME, "--restore-last-session"])
+        self.assertEqual(cmd, f"{self.CHROME} --app=https://web.whatsapp.com/")
+
     def test_a_web_app_keeps_the_url_it_was_started_with(self):
         cmd = self.relaunch(self.WHATSAPP, [self.CHROME, "--app=https://web.whatsapp.com/"])
         self.assertEqual(cmd, f"{self.CHROME} --app=https://web.whatsapp.com/")
@@ -451,7 +455,7 @@ class InstalledWebApps(unittest.TestCase):
     def test_an_installed_web_app_is_relaunched_by_its_app_id(self):
         self.assertEqual(
             self.relaunch([self.BRAVE, "--restore-last-session"]),
-            f"{self.BRAVE} --restore-last-session --app-id=hnpfjngllnobngcgfapefoaidbinmjnm",
+            f"{self.BRAVE} --app-id=hnpfjngllnobngcgfapefoaidbinmjnm",
         )
 
     def test_an_installed_web_app_does_not_take_the_flag_of_the_app_that_started_the_browser(self):
@@ -462,6 +466,12 @@ class InstalledWebApps(unittest.TestCase):
 
 
 class ExplicitLaunchers(unittest.TestCase):
+    def test_explicit_web_app_launcher_preserves_shell_syntax(self):
+        cls = "chrome-app.example.com__-Default"
+        cmd = "cd /tmp && chromium --app=https://app.example.com/"
+        with mock.patch.object(config, "LAUNCHERS", {cls: cmd}):
+            self.assertEqual(relaunch.normalize_web_app_command(cmd, cls), cmd)
+
     def test_user_configured_launcher_does_not_replay_sandbox_arguments(self):
         with (
             mock.patch.object(config, "LAUNCHERS", {"steam": "steam"}, create=True),
